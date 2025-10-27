@@ -1,234 +1,11 @@
 import re
 import string
-import numpy as np
-from collections import defaultdict
-import math
 
-class AIPersianTranslator:
+class UniversalEnglishToPersianTranslator:
     def __init__(self):
         self.translation_dict = {}
-        # AI Components
-        self.sentence_patterns = {}
-        self.word_embeddings = {}
-        self.language_model = defaultdict(lambda: defaultdict(int))
-        
         self.initialize_comprehensive_dictionary()
-        self.initialize_ai_components()
     
-    def initialize_ai_components(self):
-        """Initialize AI components for better translation"""
-        # Sentence patterns for common structures
-        self.sentence_patterns = {
-            'question': {
-                'what': 'چه {noun} {verb}',
-                'where': 'کجا {verb} {noun}',
-                'when': 'کی {verb} {noun}',
-                'why': 'چرا {verb} {noun}',
-                'how': 'چگونه {verb} {noun}',
-                'can': 'آیا {subject} می‌تواند {verb}',
-                'will': 'آیا {subject} خواهد {verb}'
-            },
-            'statement': {
-                'subject_verb_object': '{subject} {object} {verb}',
-                'subject_be_adjective': '{subject} {adjective} است',
-                'possessive': '{possessed} {possessor} {verb}'
-            }
-        }
-        
-        # Simple word embeddings for semantic similarity
-        self.word_embeddings = {
-            'go': ['move', 'travel', 'walk', 'run', 'come'],
-            'big': ['large', 'huge', 'great', 'massive', 'enormous'],
-            'small': ['little', 'tiny', 'mini', 'compact', 'petite'],
-            'happy': ['joyful', 'glad', 'pleased', 'delighted', 'cheerful'],
-            'sad': ['unhappy', 'depressed', 'miserable', 'sorrowful', 'gloomy'],
-            'good': ['nice', 'excellent', 'fine', 'wonderful', 'great'],
-            'bad': ['poor', 'terrible', 'awful', 'horrible', 'negative']
-        }
-    
-    def ai_sentence_analyzer(self, english_sentence):
-        """AI-powered sentence analysis to understand structure"""
-        words = self.preprocess_text(english_sentence)
-        
-        analysis = {
-            'sentence_type': 'statement',  # question, command, statement
-            'main_verb': None,
-            'subject': None,
-            'object': None,
-            'tense': 'present',
-            'modality': None  # can, will, should, etc.
-        }
-        
-        # Detect sentence type
-        if any(word in ['what', 'where', 'when', 'why', 'how', 'can', 'will'] for word in words):
-            analysis['sentence_type'] = 'question'
-        
-        # Detect modality
-        modal_verbs = ['can', 'could', 'will', 'would', 'shall', 'should', 'may', 'might', 'must']
-        for word in words:
-            if word in modal_verbs:
-                analysis['modality'] = word
-        
-        # Detect tense (simplified)
-        if any(word in ['was', 'were', 'had', 'did'] for word in words):
-            analysis['tense'] = 'past'
-        elif any(word.endswith('ing') for word in words):
-            analysis['tense'] = 'present_continuous'
-        
-        # Find subject (simplified)
-        pronouns = ['i', 'you', 'he', 'she', 'we', 'they', 'it']
-        for word in words:
-            if word in pronouns:
-                analysis['subject'] = word
-                break
-        
-        return analysis
-    
-    def ai_semantic_similarity(self, word1, word2):
-        """Calculate semantic similarity between words using simple embeddings"""
-        if word1 == word2:
-            return 1.0
-        
-        # Check if words are in each other's semantic clusters
-        if word1 in self.word_embeddings and word2 in self.word_embeddings[word1]:
-            return 0.8
-        if word2 in self.word_embeddings and word1 in self.word_embeddings[word2]:
-            return 0.8
-        
-        # Simple character-based similarity
-        common_chars = len(set(word1) & set(word2))
-        max_len = max(len(word1), len(word2))
-        
-        return common_chars / max_len if max_len > 0 else 0
-    
-    def ai_find_best_translation(self, english_word, context_words=[]):
-        """AI-powered word translation with context awareness"""
-        # Direct dictionary lookup first
-        if english_word in self.translation_dict:
-            return self.translation_dict[english_word]
-        
-        # Try semantic similarity for unknown words
-        best_similarity = 0
-        best_translation = english_word
-        
-        for known_word, translation in self.translation_dict.items():
-            similarity = self.ai_semantic_similarity(english_word, known_word)
-            if similarity > best_similarity and similarity > 0.6:
-                best_similarity = similarity
-                best_translation = translation
-        
-        return best_translation
-    
-    def ai_enhanced_syntax(self, english_words, persian_words, sentence_analysis):
-        """AI-powered syntax rearrangement"""
-        if not persian_words:
-            return []
-        
-        # Remove articles
-        filtered_persian = []
-        filtered_english = []
-        
-        for eng, per in zip(english_words, persian_words):
-            if eng not in ['the', 'a', 'an'] and per:
-                filtered_persian.append(per)
-                filtered_english.append(eng)
-        
-        # Apply AI-based syntax rules based on sentence analysis
-        if sentence_analysis['sentence_type'] == 'question':
-            return self.ai_handle_question(filtered_english, filtered_persian, sentence_analysis)
-        else:
-            return self.ai_handle_statement(filtered_english, filtered_persian, sentence_analysis)
-    
-    def ai_handle_question(self, english_words, persian_words, analysis):
-        """AI handling for question sentences"""
-        result = []
-        
-        # For "can" questions
-        if analysis['modality'] == 'can':
-            # Pattern: آیا + subject + می‌تواند + verb + object
-            result.append('آیا')
-            
-            # Add subject
-            for i, eng_word in enumerate(english_words):
-                if eng_word in ['i', 'you', 'he', 'she', 'we', 'they']:
-                    result.append(persian_words[i])
-            
-            # Add modal verb
-            result.append('می‌تواند')
-            
-            # Add other words (skip modal and subject)
-            for i, eng_word in enumerate(english_words):
-                if (eng_word not in ['can', 'i', 'you', 'he', 'she', 'we', 'they'] and
-                    persian_words[i] not in result):
-                    result.append(persian_words[i])
-        
-        # For WH-questions (what, where, when, why, how)
-        elif any(word in ['what', 'where', 'when', 'why', 'how'] for word in english_words):
-            wh_word = None
-            wh_index = -1
-            
-            # Find WH-word
-            for i, eng_word in enumerate(english_words):
-                if eng_word in ['what', 'where', 'when', 'why', 'how']:
-                    wh_word = eng_word
-                    wh_index = i
-                    break
-            
-            if wh_word:
-                # Add WH-word first
-                result.append(persian_words[wh_index])
-                
-                # Add other words
-                for i, eng_word in enumerate(english_words):
-                    if i != wh_index and persian_words[i] not in result:
-                        result.append(persian_words[i])
-        
-        return result if result else persian_words
-    
-    def ai_handle_statement(self, english_words, persian_words, analysis):
-        """AI handling for statement sentences"""
-        result = []
-        
-        # Basic SOV structure with AI improvements
-        subjects = []
-        verbs = []
-        objects = []
-        adjectives = []
-        possessives = {}
-        
-        # Classify words with AI context
-        for i, (eng_word, per_word) in enumerate(zip(english_words, persian_words)):
-            # Subjects
-            if eng_word in ['i', 'you', 'he', 'she', 'we', 'they']:
-                subjects.append(per_word)
-            
-            # Verbs
-            elif eng_word in ['am', 'is', 'are', 'was', 'were']:
-                verbs.append('است')
-            elif eng_word in ['have', 'has', 'had']:
-                verbs.append('دارد')
-            elif eng_word in self.translation_dict and any(x in self.translation_dict[eng_word] for x in ['می‌', 'کرد', 'است']):
-                verbs.append(per_word)
-            
-            # Possessives
-            elif eng_word in ['my', 'your', 'his', 'her', 'our', 'their']:
-                if i + 1 < len(english_words):
-                    possessives[i + 1] = per_word
-            
-            else:
-                if i in possessives:
-                    objects.append(persian_words[i])
-                    objects.append(possessives[i])
-                else:
-                    objects.append(per_word)
-        
-        # Build sentence with AI-optimized structure
-        result.extend(subjects)
-        result.extend(objects)
-        result.extend(verbs)
-        
-        return result if result else persian_words
-
     def initialize_comprehensive_dictionary(self):
         """Initialize with a much larger vocabulary"""
         base_dict = {
@@ -236,14 +13,15 @@ class AIPersianTranslator:
             'i': 'من', 'you': 'تو', 'he': 'او', 'she': 'او', 'we': 'ما', 'they': 'آنها', 'it': 'آن',
             'me': 'من', 'him': 'او', 'her': 'او', 'us': 'ما', 'them': 'آنها',
             'my': 'من', 'your': 'تو', 'his': 'او', 'her': 'او', 'our': 'ما', 'their': 'آنها',
+            'mine': 'مال من', 'yours': 'مال تو', 'hers': 'مال او', 'ours': 'مال ما', 'theirs': 'مال آنها',
             
-            # Common verbs
+            # Common verbs - FIXED: Modal verbs as separate
             'am': 'هستم', 'is': 'است', 'are': 'هستید', 'was': 'بود', 'were': 'بودید',
             'have': 'دارم', 'has': 'دارد', 'had': 'داشت',
             'do': 'می‌کنم', 'does': 'می‌کند', 'did': 'کرد',
             'go': 'برویم', 'went': 'رفتیم', 'goes': 'می‌رود', 'going': 'رفتن',
             'see': 'می‌بینم', 'saw': 'دیدم', 'seen': 'دیده',
-            'get': 'می‌گیرم', 'got': 'گرفتم','eat':'خوردن',
+            'get': 'می‌گیرم', 'got': 'گرفتم',
             'make': 'می‌سازم', 'made': 'ساختم',
             'take': 'می‌گیرم', 'took': 'گرفتم',
             'come': 'می‌آیم', 'came': 'آمدم',
@@ -260,8 +38,34 @@ class AIPersianTranslator:
             'understand': 'می‌فهمم', 'understanding': 'فهمیدن',
             'learn': 'یاد می‌گیرم', 'learning': 'یادگیری',
             'teach': 'آموزش می‌دهم', 'teaching': 'آموزش دادن',
+            'say': 'می‌گویم', 'said': 'گفت',
+            'find': 'پیدا می‌کنم', 'found': 'پیدا کرد',
+            'give': 'می‌دهم', 'gave': 'داد',
+            'tell': 'می‌گویم', 'told': 'گفت',
+            'call': 'تماس می‌گیرم', 'called': 'تماس گرفت',
+            'try': 'سعی می‌کنم', 'tried': 'سعی کرد',
+            'ask': 'می‌پرسم', 'asked': 'پرسید',
+            'need': 'نیاز دارم', 'needed': 'نیاز داشت',
+            'feel': 'احساس می‌کنم', 'felt': 'احساس کرد',
+            'become': 'می‌شوم', 'became': 'شد',
+            'leave': 'ترک می‌کنم', 'left': 'ترک کرد',
+            'put': 'می‌گذارم', 'put': 'گذاشت',
+            'mean': 'معنی می‌دهم', 'meant': 'معنی داد',
+            'keep': 'نگه می‌دارم', 'kept': 'نگه داشت',
+            'let': 'اجازه می‌دهم', 'let': 'اجازه داد',
+            'begin': 'شروع می‌کنم', 'began': 'شروع کرد',
+            'seem': 'به نظر می‌رسد', 'seemed': 'به نظر رسید',
+            'help': 'کمک می‌کنم', 'helped': 'کمک کرد',
+            'show': 'نشان می‌دهم', 'showed': 'نشان داد',
+            'hear': 'می‌شنوم', 'heard': 'شنید',
+            'run': 'می‌دوم', 'ran': 'دوید',
+            'move': 'حرکت می‌کنم', 'moved': 'حرکت کرد',
+            'live': 'زندگی می‌کنم', 'lived': 'زندگی کرد',
+            'believe': 'باور می‌کنم', 'believed': 'باور کرد',
+            'bring': 'می‌آورم', 'brought': 'آورد',
+            'happen': 'اتفاق می‌افتد', 'happened': 'اتفاق افتاد',
             
-            # Modal verbs
+            # Modal verbs - FIXED: As separate category
             'can': 'می‌توانیم', 'could': 'می‌توانستیم',
             'will': 'خواهیم', 'would': 'می‌کردیم',
             'shall': 'باید', 'should': 'باید',
@@ -272,7 +76,7 @@ class AIPersianTranslator:
             'time': 'زمان', 'person': 'شخص', 'people': 'مردم', 'man': 'مرد', 'woman': 'زن', 
             'child': 'کودک', 'children': 'کودکان', 'family': 'خانواده', 'friend': 'دوست',
             'house': 'خانه', 'home': 'خانه', 'room': 'اتاق', 'door': 'در', 'window': 'پنجره',
-            'car': 'ماشین', 'bus': 'اتوبوس', 'train': 'قطار', 'bike': 'دوچرخه','girl':'دختر','boy':'پسر',
+            'car': 'ماشین', 'bus': 'اتوبوس', 'train': 'قطار', 'bike': 'دوچرخه',
             'water': 'آب', 'food': 'غذا', 'bread': 'نان', 'rice': 'برنج', 'fruit': 'میوه',
             'book': 'کتاب', 'pen': 'خودکار', 'paper': 'کاغذ', 'computer': 'کامپیوتر',
             'phone': 'تلفن', 'tv': 'تلویزیون', 'music': 'موسیقی',
@@ -291,6 +95,9 @@ class AIPersianTranslator:
             'bed': 'تخت', 'kitchen': 'آشپزخانه', 'bathroom': 'دستشویی',
             'garden': 'باغ', 'park': 'پارک', 'shop': 'فروشگاه', 'market': 'بازار',
             'hospital': 'بیمارستان', 'doctor': 'دکتر', 'medicine': 'دارو',
+            'air': 'هوا', 'fire': 'آتش', 'earth': 'زمین', 'rain': 'باران',
+            'snow': 'برف', 'wind': 'باد', 'sea': 'دریا', 'river': 'رودخانه',
+            'mountain': 'کوه', 'forest': 'جنگل', 'road': 'جاده', 'bridge': 'پل',
             'dinner': 'شام', 'lunch': 'ناهار', 'breakfast': 'صبحانه',
             
             # Adjectives
@@ -300,15 +107,41 @@ class AIPersianTranslator:
             'hot': 'داغ', 'cold': 'سرد', 'warm': 'گرم', 'cool': 'خنک',
             'new': 'جدید', 'old': 'قدیمی', 'young': 'جوان', 'fast': 'سریع',
             'slow': 'آهسته', 'easy': 'آسان', 'difficult': 'سخت', 'important': 'مهم',
+            'first': 'اول', 'last': 'آخرین', 'long': 'طولانی', 'great': 'عالی',
+            'little': 'کوچک', 'own': 'خود', 'other': 'دیگر', 'right': 'درست',
+            'high': 'بلند', 'different': 'متفاوت', 'large': 'بزرگ', 'next': 'بعدی',
+            'early': 'زود', 'public': 'عمومی', 'same': 'همان', 'able': 'قادر',
+            'strong': 'قوی', 'weak': 'ضعیف', 'rich': 'ثروتمند', 'poor': 'فقیر',
+            'clean': 'تمیز', 'dirty': 'کثیف', 'dark': 'تاریک', 'light': 'روشن',
+            'heavy': 'سنگین', 'soft': 'نرم', 'hard': 'سخت', 'sweet': 'شیرین',
+            'bitter': 'تلخ', 'salty': 'شور', 'sour': 'ترش',
+            
+            # Adverbs
+            'very': 'بسیار', 'too': 'خیلی', 'so': 'بنابراین', 'also': 'نیز',
+            'only': 'فقط', 'well': 'خوب', 'now': 'اکنون', 'then': 'سپس',
+            'here': 'اینجا', 'there': 'آنجا', 'today': 'امروز', 'tomorrow': 'فردا',
+            'yesterday': 'دیروز', 'always': 'همیشه', 'never': 'هرگز', 'often': 'اغلب',
+            'sometimes': 'گاهی اوقات', 'usually': 'معمولا', 'quickly': 'به سرعت',
+            'slowly': 'به آهستگی', 'easily': 'به آسانی', 'hard': 'سخت',
+            'together': 'با هم', 'alone': 'تنها', 'again': 'دوباره',
             
             # Prepositions
             'in': 'در', 'on': 'روی', 'at': 'در', 'to': 'به', 'from': 'از',
             'with': 'با', 'without': 'بدون', 'for': 'برای', 'about': 'درباره',
-            'by': 'توسط', 'of': 'از',
+            'by': 'توسط', 'as': 'به عنوان', 'of': 'از', 'up': 'بالا',
+            'into': 'به داخل', 'through': 'از طریق', 'during': 'در طول', 
+            'before': 'قبل', 'after': 'بعد', 'above': 'بالا', 'below': 'پایین', 
+            'between': 'بین', 'under': 'زیر', 'over': 'روی', 'around': 'اطراف',
+            'behind': 'پشت', 'front': 'جلو', 'inside': 'داخل', 'outside': 'خارج',
+            
+            # Conjunctions
+            'and': 'و', 'but': 'اما', 'or': 'یا', 'because': 'زیرا', 
+            'if': 'اگر', 'when': 'وقتی', 'while': 'در حالی که', 'though': 'اگرچه',
+            'where': 'جایی که', 'since': 'از آنجا که', 'until': 'تا',
             
             # Question words
             'what': 'چه', 'who': 'چه کسی', 'where': 'کجا', 'when': 'کی',
-            'why': 'چرا', 'how': 'چگونه', 'which': 'کدام',
+            'why': 'چرا', 'how': 'چگونه', 'which': 'کدام', 'whose': 'مال چه کسی',
             
             # Common phrases
             'hello': 'سلام', 'hi': 'سلام', 'goodbye': 'خداحافظ', 'bye': 'خداحافظ',
@@ -322,7 +155,9 @@ class AIPersianTranslator:
     def preprocess_text(self, text):
         """Clean and tokenize text"""
         text = text.lower()
+        # Remove punctuation but keep basic sentence structure
         text = re.sub(r'[^\w\s]', ' ', text)
+        # Split into words
         words = text.split()
         return words
     
@@ -331,6 +166,7 @@ class AIPersianTranslator:
         contractions = {
             "i'm": "i am", "you're": "you are", "he's": "he is", "she's": "she is",
             "it's": "it is", "we're": "we are", "they're": "they are",
+            "i've": "i have", "you've": "you have", "we've": "we have", "they've": "they have",
             "i'll": "i will", "you'll": "you will", "he'll": "he will", "she'll": "she will",
             "we'll": "we will", "they'll": "they will", "don't": "do not",
             "doesn't": "does not", "didn't": "did not", "can't": "cannot",
@@ -342,29 +178,101 @@ class AIPersianTranslator:
         return contractions.get(word.lower(), word)
     
     def translate_word(self, word):
-        """AI-enhanced word translation"""
+        """Translate a single word using direct dictionary lookup"""
         # Handle contractions first
         expanded = self.handle_contractions(word)
         if expanded != word:
             return expanded
         
+        # Clean the word
         clean_word = word.strip(string.punctuation).lower()
         
-        # Use AI for better translation
-        return self.ai_find_best_translation(clean_word)
+        # Check direct translation
+        if clean_word in self.translation_dict:
+            return self.translation_dict[clean_word]
+        
+        # For unknown words, try simple plural forms
+        if clean_word.endswith('s') and len(clean_word) > 1:
+            singular = clean_word[:-1]
+            if singular in self.translation_dict:
+                return self.translation_dict[singular]
+        
+        # Return the original word if not found
+        return clean_word
+    
+    def apply_persian_syntax(self, english_words, persian_words):
+        """Apply proper Persian syntax rules - FIXED VERSION"""
+        if not persian_words:
+            return []
+        
+        # Remove articles and filter empty words
+        filtered_persian = []
+        filtered_english = []
+        
+        for eng, per in zip(english_words, persian_words):
+            if eng not in ['the', 'a', 'an'] and per:
+                filtered_persian.append(per)
+                filtered_english.append(eng)
+        
+        if not filtered_persian:
+            return []
+        
+        # NEW: Handle modal verbs properly
+        modal_verbs = ['can', 'could', 'will', 'would', 'shall', 'should', 'may', 'might', 'must']
+        main_verbs = ['go', 'come', 'see', 'know', 'want', 'like', 'love', 'work', 'play', 'read', 'write']
+        
+        has_modal = any(eng in modal_verbs for eng in filtered_english)
+        has_main_verb = any(eng in main_verbs for eng in filtered_english)
+        
+        # If we have both modal and main verb, use only modal in Persian
+        if has_modal and has_main_verb:
+            result = []
+            
+            # Add subject
+            for i, eng_word in enumerate(filtered_english):
+                if eng_word in ['i', 'you', 'he', 'she', 'we', 'they']:
+                    result.append(filtered_persian[i])
+            
+            # Add modal verb (skip main verb)
+            for i, eng_word in enumerate(filtered_english):
+                if eng_word in modal_verbs:
+                    result.append(filtered_persian[i])
+            
+            # Add other words (objects, prepositions, etc.)
+            for i, eng_word in enumerate(filtered_english):
+                if (eng_word not in modal_verbs and 
+                    eng_word not in main_verbs and 
+                    eng_word not in ['i', 'you', 'he', 'she', 'we', 'they'] and
+                    filtered_persian[i] not in result):
+                    result.append(filtered_persian[i])
+            
+            return result
+        
+        # For regular sentences without modal verbs
+        result = []
+        
+        # Add subjects first
+        for i, eng_word in enumerate(filtered_english):
+            if eng_word in ['i', 'you', 'he', 'she', 'we', 'they']:
+                result.append(filtered_persian[i])
+        
+        # Add objects and other words
+        for i, eng_word in enumerate(filtered_english):
+            if (eng_word not in ['i', 'you', 'he', 'she', 'we', 'they'] and
+                filtered_persian[i] not in result):
+                result.append(filtered_persian[i])
+        
+        return result
     
     def translate_sentence(self, english_sentence):
-        """AI-powered sentence translation"""
+        """Translate a complete sentence"""
         if not english_sentence.strip():
             return ""
-        
-        # AI Sentence Analysis
-        sentence_analysis = self.ai_sentence_analyzer(english_sentence)
         
         # Preprocess
         words = self.preprocess_text(english_sentence)
         
-        # Translate each word with AI
+        # Translate each word
         translated_words = []
         for word in words:
             translation = self.translate_word(word)
@@ -373,8 +281,8 @@ class AIPersianTranslator:
             else:
                 translated_words.append(translation)
         
-        # AI-powered syntax rearrangement
-        final_translation = self.ai_enhanced_syntax(words, translated_words, sentence_analysis)
+        # Apply Persian syntax
+        final_translation = self.apply_persian_syntax(words, translated_words)
         
         # Join and clean
         persian_sentence = ' '.join(final_translation)
@@ -383,34 +291,39 @@ class AIPersianTranslator:
         return persian_sentence
 
 def main():
-    translator = AIPersianTranslator()
+    translator = UniversalEnglishToPersianTranslator()
     
     print("=" * 70)
-    print("🤖 AI-POWERED ENGLISH TO PERSIAN TRANSLATOR")
+    print("🌍 ENGLISH TO PERSIAN TRANSLATOR - FIXED MODAL VERBS")
+    print("=" * 70)
+    print("Now properly handles modal verbs like 'can', 'will', etc.")
     print("=" * 70)
     
-    # Test AI capabilities
+    # Test with modal verbs
     test_cases = [
         "can we go for dinner",
-        "what is your name",
+        "i will come tomorrow",
+        "you should study hard",
+        "we can play football",
+        "she must go to school",
+        "they may come later",
+        "can you help me",
+        "we should eat food",
+        "i can speak english",
+        "you must see this"
     ]
     
-    print("\n🧪 AI TRANSLATION TEST:")
+    print("\n🧪 MODAL VERBS TEST:")
     print("-" * 50)
     
     for i, test in enumerate(test_cases, 1):
         translation = translator.translate_sentence(test)
-        analysis = translator.ai_sentence_analyzer(test)
-        
         print(f"{i:2d}. EN: {test}")
         print(f"    FA: {translation}")
-        print(f"    AI Analysis: {analysis['sentence_type']} sentence")
-        if analysis['modality']:
-            print(f"    Modality: {analysis['modality']}")
         print()
     
     # Interactive session
-    print("\n💬 AI-POWERED TRANSLATION:")
+    print("\n💬 INTERACTIVE TRANSLATION:")
     print("-" * 50)
     
     while True:
@@ -423,12 +336,16 @@ def main():
                 
             if user_input:
                 translation = translator.translate_sentence(user_input)
-                analysis = translator.ai_sentence_analyzer(user_input)
-                
                 print(f"\n✅ English: {user_input}")
                 print(f"✅ Persian: {translation}")
-                print(f"🤖 AI Analysis: {analysis}")
                 
+                # Show word breakdown
+                words = translator.preprocess_text(user_input)
+                print("\n🔍 Word breakdown:")
+                for word in words:
+                    trans = translator.translate_word(word)
+                    if trans != word:
+                        print(f"   '{word}' → '{trans}'")
             else:
                 print("⚠️  Please enter some text!")
                 
