@@ -1,0 +1,3 @@
+!pip install torch transformers streamlit
+!pip install torch transformers
+
